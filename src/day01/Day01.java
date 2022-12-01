@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class Day01 {
     public static void main(String[] args) throws FileNotFoundException {
-        Scanner input = new Scanner(new File("src/day01/day01-test.txt"));
+        Scanner input = new Scanner(new File("src/day01/day01-real.txt"));
 
         ArrayList<Elf> elves = new ArrayList<>();
 
@@ -28,6 +28,7 @@ public class Day01 {
             }
         }
 
+        // Part 1: how many calories does the elf with the most calories have?
         int maxCalories = elves.stream().map(Elf::getTotalCalories).max(Integer::compareTo).get();
         System.out.println(maxCalories);
     }
