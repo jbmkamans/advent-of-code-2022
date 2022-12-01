@@ -1,0 +1,5 @@
+# IntelliJ specific directory
+/.idea
+
+# target directory for classes
+/out
