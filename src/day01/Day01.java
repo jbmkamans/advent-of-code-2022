@@ -3,6 +3,7 @@ package day01;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Scanner;
 
 public class Day01 {
@@ -31,5 +32,14 @@ public class Day01 {
         // Part 1: how many calories does the elf with the most calories have?
         int maxCalories = elves.stream().map(Elf::getTotalCalories).max(Integer::compareTo).get();
         System.out.println(maxCalories);
+
+        // Part 2: how many calories do the top three elves with the most calories have?
+        int totalCaloriesTopThree = elves.stream()
+                .map(Elf::getTotalCalories)
+                .sorted(Comparator.reverseOrder()) // reverse order, so top = most calories
+                .limit(3) // get top three
+                .mapToInt(i -> i) // convert Stream<Integer> to IntStream, so we have access to .sum()
+                .sum();
+        System.out.println(totalCaloriesTopThree);
     }
 }
