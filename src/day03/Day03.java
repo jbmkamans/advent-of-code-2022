@@ -2,7 +2,10 @@ package day03;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.BitSet;
 import java.util.Scanner;
+import java.util.function.BinaryOperator;
+import java.util.function.IntFunction;
 
 public class Day03 {
     public static void main(String[] args) throws FileNotFoundException {
@@ -12,53 +15,58 @@ public class Day03 {
 
         int totalPriorities = 0; // answer of part A
         while (input.hasNext()) {
-            char[] line = input.nextLine().toCharArray();
+            String line = input.nextLine();
 
             // ==============================================================
-            // I'm gonna use a 64bit datatype in my own way.
-            // I'm gonna fill it with letters by setting the "correct" bit.
-            // When I want to save an "A", I set the last bit,
-            // when I want to save a "B", I set the bit before the last, etc.
-            // For this, I can just use the ASCII table with some maths.
-            // It is very handy that the letters a-z are close to A-Z in the ASCII table,
-            // there are only 6 letters between them (and I'm not gonna use them).
-            // So I can fit all the a-z and A-Z (26 + 26 = 52) bits in a 64bit data type.
-
-            // These are the letters in their corresponding bit place:
-            // ......zyxwvutsrqponmlkjihgfedcba......ZYXWVUTSRQPONMLKJIHGFEDCBA
-            // okay, let's start!
+            // I'm gonna save letters in a java.util.BitSet in a special way.
+            // Each letter (either a-z or A-Z) corresponds to one bit in the bitset.
+            // Index 0-25 are used for letters A-Z (index counting from left to right, i.e. LSB 0),
+            // index 26-31 are unused,
+            // index 32-57 are used for letters a-z,
+            // index 58-63 are unused.
+            // Index 0 = 'A', index 1 = 'B', etc.
+            // Index 32 = 'a', index 33 = 'b', etc.
+            // Those indices are chosen, so I can use the ASCII table numbering.
             // ==============================================================
 
-            // determine the half
-            int halfSize = line.length / 2;
-            long first = 0; // long = 64bit, gonna fill it with letters
-            long second = 0; // long = 64bit, gonna fill it with letters
+            // determine the half, need it to split the input in a first and second compartment
+            int halfSize = line.length() / 2;
 
-            // set correct bits in both first and second compartments
-            for (int i = 0; i < halfSize; i++) {
-                first |= (1L << line[i] - 'A');
-                second |= (1L << line[i + halfSize] - 'A');
-            }
+            // function to get a bitset with one set bit at the correct index (see big comment at top)
+            IntFunction<BitSet> toBitsetWithCorrectLetterIndex = (c) -> BitSet.valueOf(new long[]{1L << (c - 'A')});
 
-            // bitwise AND, so you keep a binary string with only one 1.
-            // to get the position of this "1"-bit, just get the length of the binary string,
-            // cause leading zeros are stripped.
-            String binaryString = Long.toBinaryString(first & second);
-            int positionOfSetBit = binaryString.length();
+            // need this, because the BitSet.or is void instead of returning the resulting bitset...
+            BinaryOperator<BitSet> bitwiseOr = (accumulator, element) -> {
+                accumulator.or(element);
+                return accumulator;
+            };
 
-            char letter = (char) (positionOfSetBit - 1 + 'A');
-            // alternative way to determine letter:
-            // char letter = (char) (Math.log(first & second) / Math.log(2) + 'A');
+            // get first compartment as a special bitset
+            BitSet first = line.chars()
+                    .limit(halfSize) // take first half of input string
+                    .mapToObj(toBitsetWithCorrectLetterIndex) // map to my special bitset
+                    .reduce(new BitSet(), bitwiseOr); // take bitwise or
+
+            // get second compartment as a special bitset
+            BitSet second = line.chars()
+                    .skip(halfSize) // skip first half, i.e. take second half of input string
+                    .mapToObj(toBitsetWithCorrectLetterIndex) // map to my special bitset
+                    .reduce(new BitSet(), bitwiseOr); // take bitwise or
+
+            // keep only the common letter by using bitwise AND (i.e. the whole reason I use BitSet)
+            first.and(second);
+
+            // get the actual letter
+            char letter = (char) (first.nextSetBit(0) + 'A');
 
             // calculate "priority"
             int priority;
             if (letter <= 'Z') {
                 // letters A-Z have priority 27-52
-                priority = positionOfSetBit + 26;
+                priority = letter - 'A' + 1 + 26;
             } else {
                 // letters a-z have priority 1-26
-                // substract 26 (because of A-Z), substract 6 (because of unused bit spaces)
-                priority = positionOfSetBit - 26 - 6;
+                priority = letter - 'a' + 1;
             }
 
             System.out.println(letter);
